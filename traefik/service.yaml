@@ -1,0 +1,28 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: traefik-dashboard-service
+  namespace: traefik
+spec:
+  type: NodePort
+  ports:
+    - port: 8080
+      targetPort: 8080   
+      nodePort: 30019
+  selector:
+    app: traefik
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: traefik-web-service
+  namespace: traefik
+spec:
+  type: NodePort
+  ports:
+    - port: 80       
+      targetPort: 80    
+      nodePort: 30020 
+  selector:
+    app: traefik
