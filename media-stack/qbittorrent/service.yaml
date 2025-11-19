@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: qbittorrent
+  namespace: media-stack
+spec:
+  selector:
+    app: qbittorrent
+  ports:
+    - name: webui
+      port: 5080
+      targetPort: 5080
+      protocol: TCP
+    - name: bittorrent-tcp
+      port: 6881
+      targetPort: 6881
+      protocol: TCP
+    - name: bittorrent-udp
+      port: 6881
+      targetPort: 6881
+      protocol: UDP
+  type: ClusterIP

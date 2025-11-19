@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: qbittorrent
+  namespace: media-stack
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: qbittorrent
+  template:
+    metadata:
+      labels:
+        app: qbittorrent
+    spec:
+      containers:
+        - name: qbittorrent
+          image: lscr.io/linuxserver/qbittorrent:5.0.2
+          env:
+            - name: PUID
+              value: "1000"
+            - name: PGID
+              value: "1000"
+            - name: TZ
+              value: "UTC"
+            - name: WEBUI_PORT
+              value: "5080"
+          ports:
+            - containerPort: 5080
+              name: webui
+            - containerPort: 6881
+              name: bittorrent-tcp
+              protocol: TCP
+            - containerPort: 6881
+              name: bittorrent-udp
+              protocol: UDP
+          volumeMounts:
+            - name: qbittorrent-config
+              mountPath: /config
+            - name: torrent-downloads
+              mountPath: /downloads
+      volumes:
+        - name: qbittorrent-config
+          persistentVolumeClaim:
+            claimName: qbittorrent-config-pvc
+        - name: torrent-downloads
+          persistentVolumeClaim:
+            claimName: torrent-downloads-pvc

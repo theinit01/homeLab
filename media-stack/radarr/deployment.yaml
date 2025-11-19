@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: radarr
+  namespace: media-stack
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: radarr
+  template:
+    metadata:
+      labels:
+        app: radarr
+    spec:
+      containers:
+        - name: radarr
+          image: lscr.io/linuxserver/radarr:5.15.1
+          env:
+            - name: PUID
+              value: "1000"
+            - name: PGID
+              value: "1000"
+            - name: TZ
+              value: "UTC"
+          ports:
+            - containerPort: 7878
+              name: http
+          volumeMounts:
+            - name: radarr-config
+              mountPath: /config
+            - name: torrent-downloads
+              mountPath: /downloads
+      volumes:
+        - name: radarr-config
+          persistentVolumeClaim:
+            claimName: radarr-config-pvc
+        - name: torrent-downloads
+          persistentVolumeClaim:
+            claimName: torrent-downloads-pvc
