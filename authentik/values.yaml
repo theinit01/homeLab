@@ -1,0 +1,37 @@
+authentik:
+  secret_key: "NEvmNl0xqTfLz915icZtCRgB1GTWOW02VlLgYMp4qaGZDdm5V7qa04BbZEXxx644vn063E5nMtaBvV83olH9QA"
+
+  postgresql:
+    host: "immich-db-rw.immich.svc.cluster.local"
+    port: 5432
+    name: "authentik"
+    user: "authentik"
+    password: "authentik@123"
+  
+  redis:
+    host: "redis.redis.svc.cluster.local"
+    password: ""
+
+  error_reporting:
+    enabled: true
+
+global:
+  image:
+    tag: 2025.10.1
+    pullPolicy: IfNotPresent
+
+
+server:
+  image:
+    tag: 2025.10.1
+    pullPolicy: IfNotPresent
+
+  ingress:
+    enabled: false
+
+
+postgresql:
+  enabled: false
+
+redis:
+  enabled: false
