@@ -1,48 +1,69 @@
-# 🏡 Homelab Infrastructure
+# 🏡 homeLab — ArgoCD Manifests
 
-This repository contains my **Homelab setup**, built and deployed on a **Kind cluster with 3 nodes**.  
-It leverages modern DevOps tools to manage applications, networking, and observability in a self-hosted environment.  
+This repository contains Kubernetes manifests and ArgoCD application configurations intended to be deployed via ArgoCD to a small home lab running on a 2-node `k3s` cluster.
 
-## 🚀 Overview
-The homelab includes:
- - **ArgoCD** → GitOps-based deployment and application lifecycle management
- - **Traefik** → Reverse proxy and ingress controller for traffic routing
- - **Prometheus** → Metrics collection and monitoring
- - **Grafana** → Dashboards for observability and visualization
- - **Flask Backend** → A Python web backend running on the cluster
+**Cluster specifics**
+- Cluster type: `k3s` (2 nodes)
+- CNI: `Cilium`
+- Storage: `Longhorn` (block/PV provisioner)
 
-## 🗂️ Repository Structure
+## 🚀 Purpose
+This repo is focused on ArgoCD-driven GitOps for the homelab. Manifests and ArgoCD Application definitions here target a lightweight homelab cluster and are designed to be managed by ArgoCD rather than applied manually. Workloads include media stack, monitoring, `n8n`, Traefik, and related components configured for Cilium networking and Longhorn storage.
+
+## 🗂️ Notable folders
 ```
-.
-├── argocd/          # ArgoCD installation manifests/configs
-├── traefik/         # Traefik setup (IngressRoutes, middlewares, etc.)
-├── monitoring/      # Prometheus + Grafana configs
-├── flask-backend/   # Sample Flask application + manifests
-└── README.md
-```
-
-## ⚙️ Setup Instructions
-
-### Prerequisites
-- A running **Kind cluster with 3 nodes**
-- `kubectl` and `helm` installed locally
-- (Optional) A domain name pointing to your ingress
-
-### Installation
-
-1. **Install ArgoCD**
-  ```
-    kubectl create namespace argocd
-    kubectl apply -n argocd -f argocd/install.yaml
+n8n/               # n8n manifests (namespace, deployment, service, postgres secret)
+traefik/           # Traefik deployment + service
+media-stack/       # Jellyfin, Radarr, Sonarr, qBittorrent, etc.
+monitoring/        # Uptime-Kuma and other lightweight monitoring
+authentik/         # Authentication components
+cloudflared/       # Cloudflared daemonset (optional)
 ```
 
-## 📊 Monitoring
-- Prometheus scrapes metrics from the cluster and workloads
-- Grafana provides visualization dashboards for nodes, workloads, and the Flask backend
+## ⚙️ Prerequisites
+- A running k3s cluster with 2 nodes
+- `kubectl` configured to point at the cluster
+- Cilium installed as the cluster CNI
+- Longhorn installed for persistent volumes
 
-## 🛠️ Future Improvements
-- CI/CD pipeline integration
-- Add persistent storage for Prometheus & Grafana
-- Automate SSL with Let’s Encrypt
-- Expand Flask backend into microservices
-$ 👉 Feel free to fork this repo, suggest improvements, or use it as a reference for your own homelab!
+Install examples (cluster operator may prefer different versions):
+
+Install Cilium (quick apply):
+```
+kubectl apply -f https://raw.githubusercontent.com/cilium/cilium/main/install/kubernetes/quick-install.yaml
+```
+
+Install Longhorn (default YAML):
+```
+kubectl apply -f https://raw.githubusercontent.com/longhorn/longhorn/master/deploy/longhorn.yaml
+```
+
+Verify your cluster and that the CNI and storage are ready before deploying workloads:
+```
+kubectl get nodes
+kubectl -n kube-system get pods
+kubectl -n longhorn-system get pods
+```
+
+## 🖥️ Node hardware (this homelab)
+- Nodes: 2
+- Model: `Lenovo ThinkCentre M920q`
+- CPU: `Intel Core i3` (8th Gen)
+- Memory: `16 GB` RAM per node
+
+## 🔁 Deploying the manifests
+You can apply everything in the repo (or specific folders) once prerequisites are satisfied.
+
+Apply all manifests recursively from the repo root:
+```
+kubectl apply -R -f .
+```
+
+Or apply a single component, e.g. `n8n`:
+```
+kubectl apply -R -f n8n/
+```
+
+## Notes
+- Ensure Longhorn storage class is set as the default (or set PVC storageClassName explicitly in manifests).
+- Cilium should be installed before pods that rely on CNI networking come up.
