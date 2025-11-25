@@ -1,0 +1,296 @@
+{
+  "name": "Finance Tracker",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "56834f72-81ae-424e-8b5c-4c73ecdf78cc",
+      "name": "Telegram Trigger",
+      "webhookId": "e9f1cd2a-607e-4155-ab53-8ec1f17a58c5",
+      "credentials": {
+        "telegramApi": {
+          "id": "LDp4ChbhDPEkNWua",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json[\"message\"][\"text\"] }}\n",
+        "hasOutputParser": true,
+        "messages": {
+          "messageValues": [
+            {
+              "message": "You convert informal expense messages into structured JSON. Output only valid JSON and nothing else. Allowed categories: Food, Transport, Rent, Shopping, Groceries, Subscriptions, Entertainment, Bills, Income, Misc. Output fields: amount, currency, category, type, remarks. amount numeric without symbol. currency INR. type expense or income."
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        208,
+        0
+      ],
+      "id": "910f992d-6eb1-48fe-9017-3f69af94b389",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-pro",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        208,
+        160
+      ],
+      "id": "cca8a9d0-e9d7-4bfe-92d6-64a57def65f4",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "9Pv7iTL8QecVGaFE",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"amount\": 250,\n  \"currency\": \"INR\",\n  \"category\": \"Food\",\n  \"type\": \"expense\",\n  \"remarks\": \"Zomato lunch with friends\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        352,
+        160
+      ],
+      "id": "8987d68a-4206-4a29-a9fc-ecf0b6ae1ed5",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "language": "python",
+        "pythonCode": "out = []\n\nfor item in _input.all(): \n    parsed = item[\"json\"]\n    from datetime import datetime\n    now = datetime.now()\n    date_str = now.strftime(\"%Y-%m-%d\")\n\n    year = now.year\n    month = f\"{now.month:02d}\"\n    sheet_name = f\"{year}-{month}\"\n\n    out.append({\n        \"json\": {\n            \"Date\": date_str,\n            \"Amount\": _input.first().json.output.amount,\n            \"Category\": _input.first().json.output.category,\n            \"Remarks\": _input.first().json.output.remarks,\n            \"sheetName\": sheet_name\n        }\n    })\n\nreturn out\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        560,
+        0
+      ],
+      "id": "8209ecad-af8b-4658-9a60-8ee0479581c6",
+      "name": "Code in Python (Beta)"
+    },
+    {
+      "parameters": {
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "expenses",
+          "mode": "list",
+          "cachedResultName": "expenses"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "amount": "={{ $json.Amount }}",
+            "date": "={{ $json.Date }}",
+            "category": "={{ $json.Category }}",
+            "remarks": "={{ $json.Remarks }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "date",
+              "displayName": "date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "amount",
+              "displayName": "amount",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "category",
+              "displayName": "category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "remarks",
+              "displayName": "remarks",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        768,
+        0
+      ],
+      "id": "f9cba8f6-1d61-4cf3-9f67-4a7deb77d39b",
+      "name": "Insert rows in a table",
+      "credentials": {
+        "postgres": {
+          "id": "hw6MzKK6C6MCZmpi",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "5266365462",
+        "text": "=Expense recorded. 💸\nAmount: ₹{{ $json.amount }}\nCategory: {{ $json.category }}\nRemarks: {{ $json.remarks }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        960,
+        0
+      ],
+      "id": "f603f02d-9146-4392-a084-b1d9148dd879",
+      "name": "Send a text message",
+      "webhookId": "8cf8fe2f-b5db-4f34-94d3-1a144b6255cf",
+      "credentials": {
+        "telegramApi": {
+          "id": "LDp4ChbhDPEkNWua",
+          "name": "Telegram account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Code in Python (Beta)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in Python (Beta)": {
+      "main": [
+        [
+          {
+            "node": "Insert rows in a table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert rows in a table": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "becef59a-5a58-4f28-961d-19274a90b0d3",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "7cbcbe86d7ab14f1996e51ba7e8cbe37b088f654bc3817f4cd6cc34c927679ea"
+  },
+  "id": "JcjWcnOY7twYU2Vo",
+  "tags": []
+}
